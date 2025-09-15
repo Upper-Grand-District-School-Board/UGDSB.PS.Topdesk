@@ -1,4 +1,24 @@
-﻿#Region '.\Public\Add-TopdeskIncidentTimespent.ps1' 0
+﻿#Region '.\Public\Add-TopdeskAssetLink.ps1' 0
+function Add-TopdeskAssetLink{
+  [cmdletbinding()]
+  param(
+    [Parameter(Mandatory = $True)][ValidateNotNullOrEmpty()][string]$sourceid,
+    [Parameter(Mandatory = $True)][ValidateNotNullOrEmpty()][string]$targetId,
+    [Parameter(Mandatory = $True)][ValidateNotNullOrEmpty()][string]$capabilityId,
+    [Parameter(Mandatory = $True)][ValidateSet("parent","child")][string]$linktype
+  )
+  $endpoint = '/tas/api/assetmgmt/assetLinks'
+  $body = @{
+    sourceId = $sourceid
+    targetId = $targetId
+    capabilityId = $capabilityId
+    linkType = $linktype
+  }
+  $results = Get-TopdeskAPIResponse -endpoint $endpoint -method Post -body ($body | ConvertTo-JSON) -Verbose:$VerbosePreference
+  return $results.Results  
+}
+#EndRegion '.\Public\Add-TopdeskAssetLink.ps1' 19
+#Region '.\Public\Add-TopdeskIncidentTimespent.ps1' 0
 function Add-TopdeskIncidentTimespent{
   [CmdletBinding()]
   param(
@@ -748,6 +768,63 @@ function Get-TopdeskAssetFields{
   return $data  
 }
 #EndRegion '.\Public\Get-TopdeskAssetFields.ps1' 41
+#Region '.\Public\Get-TopdeskAssetLink.ps1' 0
+function Get-TopdeskAssetLink{
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $True)][ValidateNotNullOrEmpty()][string]$sourceid,
+    [Parameter()][ValidateNotNullOrEmpty()][string]$targetId,
+    [Parameter()][ValidateNotNullOrEmpty()][string]$capabilityId
+  )
+  $endpoint = '/tas/api/assetmgmt/assetLinks'
+  $params = [System.Collections.Generic.List[string]]::new()
+  $params.Add("sourceId=$($sourceid)")
+  if ($PSBoundParameters.ContainsKey("targetId")) {
+    $params.Add("targetId=$($targetId)")
+  }
+  if ($PSBoundParameters.ContainsKey("capabilityId")) {
+    $params.Add("capabilityId=$($capabilityId)")
+  }
+  $uri = "$($endpoint)?$($params -join "&")"
+  $results = Get-TopdeskAPIResponse -endpoint $uri -Verbose:$VerbosePreference
+  return $results.Results
+}
+#EndRegion '.\Public\Get-TopdeskAssetLink.ps1' 21
+#Region '.\Public\Get-TopdeskAssetLinkRelations.ps1' 0
+function Get-TopdeskAssetLinkRelations{
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $True)][ValidateNotNullOrEmpty()][string]$sourceid,
+    [Parameter(Mandatory = $True)][ValidateNotNullOrEmpty()][string]$targetId
+  )  
+  $endpoint = '/tas/api/assetmgmt/assetLinks'
+  $body = @{
+    sourceId = $sourceid
+    targetId = $targetId
+  }
+  $results = Get-TopdeskAPIResponse -endpoint $endpoint -method Post -body ($body | ConvertTo-JSON) -Verbose:$VerbosePreference
+  return $results.Results    
+}
+#EndRegion '.\Public\Get-TopdeskAssetLinkRelations.ps1' 15
+#Region '.\Public\Get-TopdeskAssetLinkTypes.ps1' 0
+function Get-TopdeskAssetLinkTypes{
+  [CmdletBinding()]
+  param(
+    [Parameter()][ValidateNotNullOrEmpty()][string]$id
+  )  
+  $endpoint = "/tas/api/assetmgmt/capabilities"
+  if ($PSBoundParameters.ContainsKey("id")) {
+    $endpoint = "$($endpoint)/$($id)"
+  }
+  $results = Get-TopdeskAPIResponse -endpoint $endpoint -Verbose:$VerbosePreference
+  if ($PSBoundParameters.ContainsKey("id")) {
+    return $results.Results
+  }
+  else{
+    return $results.Results.dataSet
+  }
+}
+#EndRegion '.\Public\Get-TopdeskAssetLinkTypes.ps1' 18
 #Region '.\Public\Get-TopdeskAssetTemplates.ps1' 0
 <#
   .DESCRIPTION
@@ -875,7 +952,11 @@ function Get-TopdeskBranches{
   # If query is not null, then set to how we want to see
   if($PSBoundParameters.ContainsKey("query") -or $queryparts.count -gt 0){
     $queryparts.add($query)
-    $query = ($queryparts -join ";") -replace ".{1}$"
+    $query = ($queryparts -join ";")
+    if($queryparts.count -gt 1){
+      $query = $query -replace ".{1}$"
+    }
+    
     $uriparts.add("query=$($query)")
   }
   # If fields is not null, then set to how we want to see
@@ -900,7 +981,7 @@ function Get-TopdeskBranches{
   }   
   return $data
 }
-#EndRegion '.\Public\Get-TopdeskBranches.ps1' 57
+#EndRegion '.\Public\Get-TopdeskBranches.ps1' 61
 #Region '.\Public\Get-TopdeskCategories.ps1' 0
 function Get-TopdeskCategories{
   [CmdletBinding()]
@@ -3549,6 +3630,20 @@ function New-TopdeskAssetImportUpload{
   }
 }
 #EndRegion '.\Public\New-TopdeskAssetImportUpload.ps1' 18
+#Region '.\Public\New-TopdeskAssetLinkType.ps1' 0
+function New-TopdeskAssetLinkType{
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $True)][ValidateNotNullOrEmpty()][string]$name
+  )    
+  $endpoint = "/tas/api/assetmgmt/capabilities"
+  $body = @{
+    name = $name
+  }
+  $results = Get-TopdeskAPIResponse -endpoint $endpoint -method Post -body ($body | ConvertTo-JSON) -Verbose:$VerbosePreference
+  return $results.Results
+}
+#EndRegion '.\Public\New-TopdeskAssetLinkType.ps1' 13
 #Region '.\Public\New-TopdeskAssetUpload.ps1' 0
 function New-TopdeskAssetUpload{
   [CmdletBinding()]
@@ -4497,6 +4592,26 @@ function Remove-TopdeskAssetField{
   }      
 }
 #EndRegion '.\Public\Remove-TopdeskAssetField.ps1' 22
+#Region '.\Public\Remove-TopdeskAssetLink.ps1' 0
+function Remove-TopdeskAssetLink{
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $True)][ValidateNotNullOrEmpty()][string]$relationId
+  )
+  $endpoint = "/tas/api/assetmgmt/assetLinks/$($relationId)"
+  Get-TopdeskAPIResponse -endpoint $endpoint -method Delete -Verbose:$VerbosePreference | Out-Null
+}
+#EndRegion '.\Public\Remove-TopdeskAssetLink.ps1' 9
+#Region '.\Public\Remove-TopdeskAssetLinkType.ps1' 0
+function Remove-TopdeskAssetLinkType{
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $True)][ValidateNotNullOrEmpty()][string]$id
+  )
+  $endpoint = "/tas/api/assetmgmt/capabilities/$($id)"
+  Get-TopdeskAPIResponse -endpoint $endpoint -method Delete -Verbose:$VerbosePreference  | Out-Null
+}
+#EndRegion '.\Public\Remove-TopdeskAssetLinkType.ps1' 9
 #Region '.\Public\Remove-TopdeskAssetUpload.ps1' 0
 function Remove-TopdeskAssetUpload{
   [CmdletBinding()]
@@ -4880,6 +4995,63 @@ function Set-TopdeskAssetAssignments{
   return $results.Results
 }
 #EndRegion '.\Public\Set-TopdeskAssetAssignments.ps1' 50
+#Region '.\Public\Set-TopdeskAssetLinkType.ps1' 0
+function Set-TopdeskAssetLinkType{
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $True)][ValidateNotNullOrEmpty()][string]$id,
+    [Parameter()][ValidateNotNullOrEmpty()][string]$name,
+    [Parameter()][ValidateNotNullOrEmpty()][bool]$inheritLocation,
+    [Parameter()][ValidateNotNullOrEmpty()][bool]$inheritPerson
+  )
+  $endpoint = "/tas/api/assetmgmt/capabilities/$($id)"
+  $body = @{}
+  if ($PSBoundParameters.ContainsKey("name")) {
+    $body.name = $name
+  }
+  if ($PSBoundParameters.ContainsKey("inheritLocation") -or $PSBoundParameters.ContainsKey("inheritPerson")) {
+    $body.inheritance = @{}
+    if ($PSBoundParameters.ContainsKey("inheritLocation")){
+      $body.inheritance.location = $inheritLocation
+    }
+    if ($PSBoundParameters.ContainsKey("inheritPerson")) {
+      $body.inheritance.person = $inheritPerson
+    }
+    
+  }  
+  $results = Get-TopdeskAPIResponse -endpoint $endpoint -method Post -body ($body | ConvertTo-JSON) -Verbose:$VerbosePreference
+  return $results.Results
+}
+<#
+    $body.inheritance.Add("location",$inheritLocation)
+  }
+  if ($PSBoundParameters.ContainsKey("inheritPerson")) {
+    $body.inheritance.Add("person", $inheritPerson)
+
+#>
+#EndRegion '.\Public\Set-TopdeskAssetLinkType.ps1' 34
+#Region '.\Public\Set-TopdeskAssetLinkTypeArchive.ps1' 0
+function Set-TopdeskAssetLinkTypeArchive{
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $True)][ValidateNotNullOrEmpty()][string]$id
+  )
+  $endpoint = "/tas/api/assetmgmt/capabilities/$($id)/archive"
+  $results = Get-TopdeskAPIResponse -endpoint $endpoint -method Post -Verbose:$VerbosePreference
+  return $results.Results  
+}
+#EndRegion '.\Public\Set-TopdeskAssetLinkTypeArchive.ps1' 10
+#Region '.\Public\Set-TopdeskAssetLinkTypeUnarchive.ps1' 0
+function Set-TopdeskAssetLinkTypeUnarchive{
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $True)][ValidateNotNullOrEmpty()][string]$id
+  )
+  $endpoint = "/tas/api/assetmgmt/capabilities/$($id)/unarchive"
+  $results = Get-TopdeskAPIResponse -endpoint $endpoint -method Post -Verbose:$VerbosePreference
+  return $results.Results    
+}
+#EndRegion '.\Public\Set-TopdeskAssetLinkTypeUnarchive.ps1' 10
 #Region '.\Public\Set-TopdeskAssetUnarchive.ps1' 0
 function Set-TopdeskAssetUnarchive{
   [CmdletBinding()]

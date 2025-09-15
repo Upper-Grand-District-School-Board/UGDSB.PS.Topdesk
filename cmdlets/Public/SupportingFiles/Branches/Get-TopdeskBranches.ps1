@@ -29,7 +29,11 @@ function Get-TopdeskBranches{
   # If query is not null, then set to how we want to see
   if($PSBoundParameters.ContainsKey("query") -or $queryparts.count -gt 0){
     $queryparts.add($query)
-    $query = ($queryparts -join ";") -replace ".{1}$"
+    $query = ($queryparts -join ";")
+    if($queryparts.count -gt 1){
+      $query = $query -replace ".{1}$"
+    }
+    
     $uriparts.add("query=$($query)")
   }
   # If fields is not null, then set to how we want to see
