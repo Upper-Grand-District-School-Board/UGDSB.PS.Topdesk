@@ -447,6 +447,7 @@ function Get-TopdeskAsset {
     [Parameter()][ValidateSet("asset", "stock", "bulkItem")][string]$resourceCategory,
     [Parameter()][bool][ValidateNotNullOrEmpty()]$includeInherited,
     [Parameter()][int][ValidateNotNullOrEmpty()]$pageStart,
+    [Parameter()][int][ValidateNotNullOrEmpty()]$pageSize,
     [Parameter()][bool][ValidateNotNullOrEmpty()]$fetchData,
     [Parameter()][switch]$fetchCount,
     [Parameter()][switch]$resolveDropdownOptions,
@@ -504,6 +505,8 @@ function Get-TopdeskAsset {
   if ($PSBoundParameters.ContainsKey("includeInherited")) { $uriparts.add("includeInherited=$($includeInherited)") }   
   # If pageStart is not null, then add to URI parts
   if ($PSBoundParameters.ContainsKey("pageStart")) { $uriparts.add("pageStart=$($pageStart)") }    
+  # If pageStart is not null, then add to URI parts
+  if ($PSBoundParameters.ContainsKey("pageSize")) { $uriparts.add("pageSize=$($pageSize)") }  
   # If fetchData is not null, then add to URI parts
   if ($PSBoundParameters.ContainsKey("fetchData")) { $uriparts.add("fetchData=$($fetchData)") }    
   # If fetchCount is not null, then add to URI parts
@@ -574,7 +577,7 @@ function Get-TopdeskAsset {
     return $data
   }
 }
-#EndRegion '.\Public\Get-TopdeskAsset.ps1' 260
+#EndRegion '.\Public\Get-TopdeskAsset.ps1' 263
 #Region '.\Public\Get-TopdeskAssetActions.ps1' 0
 function Get-TopdeskAssetActions{
   [CmdletBinding()]
